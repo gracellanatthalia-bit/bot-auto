@@ -31,8 +31,8 @@ bot.action("ORDER", (ctx) => {
   ctx.reply(
     "Pilih Produk:",
     Markup.inlineKeyboard([
-      [Markup.button.callback("Produk A - Rp10.000", "PRODUK_A")],
-      [Markup.button.callback("Produk B - Rp20.000", "PRODUK_B")]
+      [Markup.button.callback("NETFLIX - Rp10.000", "PRODUK_A")],
+      [Markup.button.callback("VIU - Rp20.000", "PRODUK_B")]
     ])
   );
 });
