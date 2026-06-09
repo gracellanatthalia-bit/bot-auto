@@ -13,12 +13,6 @@ const bot = new Telegraf(process.env.BOT_TOKEN.trim());
 app.use(express.json());
 
 bot.start((ctx) => {
-  ctx.reply("Selamat datang di Bot Auto Order!");
-});
-
-const { Markup } = require("telegraf");
-
-bot.start((ctx) => {
   ctx.reply(
     "Selamat datang di Bot Auto Order!",
     Markup.inlineKeyboard([
