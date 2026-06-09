@@ -18,7 +18,7 @@ if (!BOT_TOKEN) {
 
 const bot = new Telegraf(BOT_TOKEN.trim());
 
-const BASE_URL = "https://bot-auto-production.up.railway.app";
+const BASE_URL = "https://google.com";
 const IPAYMU_URL = "https://my.ipaymu.com/api/v2/payment";
 const IPAYMU_VA = process.env.IPAYMU_VA;
 const IPAYMU_API_KEY = process.env.IPAYMU_API_KEY;
@@ -49,7 +49,7 @@ async function createPayment(ctx, productName, amount) {
     description: [productName],
     returnUrl: BASE_URL,
     cancelUrl: BASE_URL,
-    notifyUrl: BASE_URL + "/webhook/ipaymu",
+    notifyUrl: "https://bot-auto-production.up.railway.app/webhook/ipaymu",
     referenceId: referenceId,
     buyerName: ctx.from.first_name || "Customer",
     buyerEmail: "customer@email.com",
