@@ -1,16 +1,83 @@
 require("dotenv").config();
 
 const express = require("express");
+const axios = require("axios");
+const crypto = require("crypto");
 const { Telegraf, Markup } = require("telegraf");
 
-if (!process.env.BOT_TOKEN) {
-  throw new Error("BOT_TOKEN belum terbaca di Railway");
-}
-
 const app = express();
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
 const bot = new Telegraf(process.env.BOT_TOKEN.trim());
 
-app.use(express.json());
+const BASE_URL = "https://bot-auto-production.up.railway.app";
+const IPAYMU_URL = "https://my.ipaymu.com/api/v2/payment";
+const IPAYMU_VA = process.env.IPAYMU_VA;
+const IPAYMU_API_KEY = process.env.IPAYMU_API_KEY;
+
+function createSignature(body) {
+  const jsonBody = JSON.stringify(body);
+  const bodyHash = crypto
+    .createHash("sha256")
+    .update(jsonBody)
+    .digest("hex")
+    .toLowerCase();
+
+  const stringToSign = "POST:" + IPAYMU_VA + ":" + bodyHash + ":" + IPAYMU_API_KEY;
+
+  return crypto
+    .createHmac("sha256", IPAYMU_API_KEY)
+    .update(stringToSign)
+    .digest("hex");
+}
+
+async function createPayment(ctx, productName, amount) {
+  const referenceId = "ORDER-" + Date.now();
+
+  const body = {
+    product: [productName],
+    qty: ["1"],
+    price: [amount],
+    description: [productName],
+    returnUrl: BASE_URL,
+    cancelUrl: BASE_URL,
+    notifyUrl: BASE_URL + "/webhook/ipaymu",
+    referenceId: referenceId,
+    buyerName: ctx.from.first_name || "Customer",
+    buyerEmail: "customer@email.com",
+    buyerPhone: "081234567890"
+  };
+
+  const signature = createSignature(body);
+
+  const response = await axios.post(IPAYMU_URL, body, {
+    headers: {
+      "Content-Type": "application/json",
+      va: IPAYMU_VA,
+      signature: signature,
+      timestamp: new Date().toISOString()
+    }
+  });
+
+  console.log("IPAYMU RESPONSE:", response.data);
+
+  const paymentUrl =
+    response.data?.Data?.Url ||
+    response.data?.Data?.url ||
+    response.data?.url;
+
+  if (!paymentUrl) {
+    throw new Error("Link pembayaran tidak ditemukan dari response iPaymu");
+  }
+
+  await ctx.reply(
+    `✅ Invoice berhasil dibuat\n\nProduk: ${productName}\nTotal: Rp${amount}\n\nKlik tombol di bawah untuk bayar:`,
+    Markup.inlineKeyboard([
+      [Markup.button.url("💳 Bayar Sekarang", paymentUrl)]
+    ])
+  );
+}
 
 bot.start((ctx) => {
   ctx.reply(
@@ -31,16 +98,28 @@ bot.action("ORDER", (ctx) => {
   );
 });
 
-bot.action("PRODUK_A", (ctx) => {
-  ctx.reply(
-    "Anda memilih Produk A\n\nTotal: Rp10.000\n\nLink pembayaran akan dibuat di tahap berikutnya."
-  );
+bot.action("PRODUK_A", async (ctx) => {
+  try {
+    await createPayment(ctx, "Produk A", 10000);
+  } catch (err) {
+    console.error(err.response?.data || err.message);
+    ctx.reply("Gagal membuat pembayaran. Cek API iPaymu atau Railway Logs.");
+  }
 });
 
-bot.action("PRODUK_B", (ctx) => {
-  ctx.reply(
-    "Anda memilih Produk B\n\nTotal: Rp20.000\n\nLink pembayaran akan dibuat di tahap berikutnya."
-  );
+bot.action("PRODUK_B", async (ctx) => {
+  try {
+    await createPayment(ctx, "Produk B", 20000);
+  } catch (err) {
+    console.error(err.response?.data || err.message);
+    ctx.reply("Gagal membuat pembayaran. Cek API iPaymu atau Railway Logs.");
+  }
+});
+
+app.post("/webhook/ipaymu", (req, res) => {
+  console.log("CALLBACK IPAYMU:", req.body);
+
+  res.status(200).send("OK");
 });
 
 app.get("/", (req, res) => {
