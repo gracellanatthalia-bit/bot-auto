@@ -16,6 +16,35 @@ bot.start((ctx) => {
   ctx.reply("Selamat datang di Bot Auto Order!");
 });
 
+const { Markup } = require("telegraf");
+
+bot.start((ctx) => {
+  ctx.reply(
+    "Selamat datang di Bot Auto Order!",
+    Markup.inlineKeyboard([
+      [Markup.button.callback("📦 Order Produk", "ORDER")]
+    ])
+  );
+});
+
+bot.action("ORDER", (ctx) => {
+  ctx.reply(
+    "Pilih Produk:",
+    Markup.inlineKeyboard([
+      [Markup.button.callback("Produk A - Rp10.000", "PRODUK_A")],
+      [Markup.button.callback("Produk B - Rp20.000", "PRODUK_B")]
+    ])
+  );
+});
+
+bot.action("PRODUK_A", (ctx) => {
+  ctx.reply("Anda memilih Produk A");
+});
+
+bot.action("PRODUK_B", (ctx) => {
+  ctx.reply("Anda memilih Produk B");
+});
+
 app.get("/", (req, res) => {
   res.send("Bot berjalan dengan baik");
 });
