@@ -9,11 +9,14 @@ const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-if (!process.env.BOT_TOKEN) {
-  throw new Error("BOT_TOKEN belum terbaca. Cek Railway Variables.");
+const BOT_TOKEN = process.env.BOT_TOKEN;
+
+if (!BOT_TOKEN) {
+  console.error("BOT_TOKEN belum terbaca dari Railway Variables");
+  process.exit(1);
 }
 
-const bot = new Telegraf(process.env.BOT_TOKEN.trim());
+const bot = new Telegraf(BOT_TOKEN.trim());
 
 const BASE_URL = "https://bot-auto-production.up.railway.app";
 const IPAYMU_URL = "https://my.ipaymu.com/api/v2/payment";
