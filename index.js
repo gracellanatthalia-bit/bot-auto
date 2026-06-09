@@ -26,4 +26,11 @@ app.listen(PORT, () => {
   console.log("Server running on port " + PORT);
 });
 
-bot.launch();
+bot.telegram.getMe()
+  .then((botInfo) => {
+    console.log("Bot connected:", botInfo.username);
+    bot.launch();
+  })
+  .catch((err) => {
+    console.error("BOT_TOKEN ERROR:", err.message);
+  });
