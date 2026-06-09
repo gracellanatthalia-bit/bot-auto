@@ -9,6 +9,10 @@ const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+if (!process.env.BOT_TOKEN) {
+  throw new Error("BOT_TOKEN belum terbaca. Cek Railway Variables.");
+}
+
 const bot = new Telegraf(process.env.BOT_TOKEN.trim());
 
 const BASE_URL = "https://bot-auto-production.up.railway.app";
