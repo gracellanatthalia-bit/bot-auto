@@ -31,6 +31,18 @@ bot.action("ORDER", (ctx) => {
   );
 });
 
+bot.action("PRODUK_A", (ctx) => {
+  ctx.reply(
+    "Anda memilih Produk A\n\nTotal: Rp10.000\n\nLink pembayaran akan dibuat di tahap berikutnya."
+  );
+});
+
+bot.action("PRODUK_B", (ctx) => {
+  ctx.reply(
+    "Anda memilih Produk B\n\nTotal: Rp20.000\n\nLink pembayaran akan dibuat di tahap berikutnya."
+  );
+});
+
 app.get("/", (req, res) => {
   res.send("Bot berjalan dengan baik");
 });
