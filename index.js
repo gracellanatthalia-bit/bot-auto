@@ -12,8 +12,6 @@ const bot = new Telegraf(process.env.BOT_TOKEN.trim());
 
 app.use(express.json());
 
-const { Markup } = require("telegraf");
-
 bot.start((ctx) => {
   ctx.reply(
     "Selamat datang di Bot Auto Order!",
