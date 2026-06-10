@@ -149,10 +149,13 @@ function getProductByNumber(number) {
   };
 }
 
-function paymentKeyboard() {
+function paymentKeyboard(ctx) {
   return Markup.inlineKeyboard([
     [
-      Markup.button.callback(`💰 Saldo: ${formatRupiah(getBalance(ctx.from.id))}`, "PAY_SALDO"),
+      Markup.button.callback(
+        `💰 Saldo: ${formatRupiah(getBalance(ctx.from.id))}`,
+        "PAY_SALDO"
+      ),
       Markup.button.callback("QRIS", "PAY_QRIS")
     ],
     [Markup.button.callback("Kembali", "BACK_STOCK")],
@@ -373,7 +376,7 @@ Harga: ${formatRupiah(product.price)}
 Deskripsi: ${product.desc}
 
 Silakan pilih metode pembayaran:`,
-    paymentKeyboard()
+    paymentKeyboard(ctx)
   );
 });
 
