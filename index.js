@@ -427,19 +427,44 @@ bot.action("CREATE_QRIS", async (ctx) => {
 });
 
 bot.action("PAY_SALDO", async (ctx) => {
-  await ctx.answerCbQuery("Saldo belum tersedia.");
-  await ctx.reply("Fitur balance belum aktif. Silakan gunakan QRIS.");
+  await ctx.answerCbQuery();
+
+  const saldo = getBalance(ctx.from.id);
+  const order = userOrders[ctx.from.id];
+
+  if (!order) {
+    return ctx.reply("Silakan pilih produk dulu.");
+  }
+
+  const products = getProducts();
+  const product = products[order.productId];
+
+  if (saldo < product.price) {
+    return ctx.reply(
+      `❌ Saldo tidak cukup.
+
+Saldo kamu: ${formatRupiah(saldo)}
+Harga produk: ${formatRupiah(product.price)}`
+    );
+  }
+
+  ctx.reply("✅ Pembayaran balance belum diaktifkan.");
 });
 
 bot.action("TOPUP_SALDO", async (ctx) => {
   await ctx.answerCbQuery();
 
+  adminState[ctx.from.id] = {
+    step: "TOPUP_AMOUNT"
+  };
+
   await ctx.reply(
-`💳 Topup Saldo
+`💳 TOPUP SALDO
 
-Silakan gunakan QRIS untuk mengisi saldo.
+Masukkan nominal topup.
 
-Minimal topup: Rp 1.000`
+Contoh:
+10000`
   );
 });
 
@@ -710,6 +735,24 @@ Tambahkan stok dengan:
 
     return ctx.reply("SNK berhasil diperbarui.");
   }
+if (state.step === "TOPUP_AMOUNT") {
+  const amount = Number(text);
+
+  if (!amount || amount < 1000) {
+    return ctx.reply("Minimal topup Rp 1.000");
+  }
+
+  delete adminState[ctx.from.id];
+
+  return ctx.reply(
+`💳 Topup dibuat
+
+Nominal:
+${formatRupiah(amount)}
+
+(Fitur QRIS topup belum disambungkan)`
+  );
+}
 });
 
 app.get("/", (req, res) => {
