@@ -252,8 +252,7 @@ bot.start((ctx) => {
   ctx.reply(
     "Selamat datang di Bot Auto Order!",
     Markup.inlineKeyboard([
-      [Markup.button.callback("📦 Order Produk", "ORDER")],
-      [Markup.button.callback("📜 SNK", "SNK")]
+      [Markup.button.callback("📦 Order Produk", "ORDER")]
     ])
   );
 });
