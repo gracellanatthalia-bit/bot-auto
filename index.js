@@ -302,7 +302,6 @@ bot.hears("💰 Saldo: Rp 0", async (ctx) => {
     ])
   );
 });
-
   const totalUser = readJSON(USERS_FILE).length;
 
   await ctx.reply(
