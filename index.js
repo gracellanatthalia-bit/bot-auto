@@ -40,22 +40,42 @@ function createSignature(body) {
 }
 
 async function createPayment(ctx, productName, amount) {
-  const referenceId = "ORDER-" + Date.now();
+  const response = await axios.post(
+    "https://ramashop.my.id/api/public/deposit/create",
+    {
+      amount: amount,
+      method: "qris"
+    },
+    {
+      headers: {
+        "X-API-Key": process.env.RAMASHOP_API_KEY,
+        "Content-Type": "application/json"
+      }
+    }
+  );
 
-  const body = {
-    product: [productName],
-    qty: ["1"],
-    price: [amount],
-    description: [productName],
-    returnUrl: BASE_URL,
-    cancelUrl: BASE_URL,
-    notifyUrl: "https://bot-auto-production.up.railway.app/webhook/ipaymu",
-    referenceId: referenceId,
-    buyerName: ctx.from.first_name || "Customer",
-    buyerEmail: "customer@email.com",
-    buyerPhone: "081234567890"
-  };
+  console.log(response.data);
 
+  if (!response.data.success) {
+    throw new Error("Gagal membuat QRIS");
+  }
+
+  const data = response.data.data;
+
+  await ctx.reply(
+    `✅ Invoice dibuat
+
+Produk: ${productName}
+Nominal: Rp${amount}
+Total Bayar: Rp${data.totalAmount}
+
+Deposit ID:
+${data.depositId}
+
+QRIS:
+${data.qrImage}`
+  );
+}
   const signature = createSignature(body);
 
   const response = await axios.post(IPAYMU_URL, body, {
