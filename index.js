@@ -23,6 +23,21 @@ if (!RAMASHOP_API_KEY) {
 
 const bot = new Telegraf(BOT_TOKEN.trim());
 
+const ADMIN_ID = 5487015519;
+const users = new Set();
+
+const SNK_TEXT = `📜 Syarat & Ketentuan
+
+1. Produk digital tidak bisa refund setelah dikirim.
+2. Garansi sesuai deskripsi produk.
+3. Pastikan membaca deskripsi sebelum membeli.
+★ 𝐖𝐀𝐑𝐀𝐍𝐓𝐘 𝐓𝐎 𝐀𝐂𝐓𝐈𝐕𝐄 ★
+
+ㅤ— wajib send screenshot login max 1x24jam ke [ https://t.me/twestip/134 ]
+ㅤ— apabila ada problem dengan akun nya mohon untuk mengisi format garansi di @warantyj
+ㅤ— tidak ss login lebih dari 24jam dianggap tidak ada garansi
+ㅤㅤㅤㅤㅤㅤㅤㅤㅤ`;
+
 const product = {
   name: "netflix",
   price: 100,
