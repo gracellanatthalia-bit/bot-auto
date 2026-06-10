@@ -346,7 +346,6 @@ Informasi Kamu
       return ctx.reply("Silakan pilih produk dulu.");
     }
 
-    await createPayment(ctx, order.productId);
   } catch (err) {
     console.error("PAYMENT ERROR:", err.response?.data || err.message);
     ctx.reply("Gagal membuat pembayaran. Cek Railway Logs.");
