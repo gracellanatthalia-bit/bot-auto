@@ -345,15 +345,12 @@ bot.action("SNK", async (ctx) => {
   await ctx.reply(readText(SNK_FILE));
 });
 
-bot.hears(/\d+/, async (ctx) => {
+bot.hears(/^[0-9]+$/, async (ctx) => {
+  if (adminState[ctx.from.id]) return;
+
   addUser(ctx.from.id);
 
-  console.log("PESAN MASUK:", ctx.message.text);
-
   const number = Number(ctx.message.text);
-
-  console.log("NUMBER:", number);
-
   const product = getProductByNumber(number);
 
   if (!product) {
