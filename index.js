@@ -249,8 +249,50 @@ ${data.qrImage}`
   }, 10000);
 }
 
+function mainMenuKeyboard() {
+  return Markup.keyboard([
+    ["🛒 List Produk", "💰 Saldo: Rp 0"],
+    ["1", "2", "3", "4", "5", "6"],
+    ["🧾 Riwayat Transaksi"],
+    ["✨ Best Seller", "How To Order ❓"]
+  ]).resize();
+}
+
 bot.start((ctx) => {
   addUser(ctx.from.id);
+
+  ctx.reply(
+    "Selamat datang di Bot Auto Order!",
+    mainMenuKeyboard()
+  );
+});
+
+bot.hears("🛒 List Produk", async (ctx) => {
+  addUser(ctx.from.id);
+  await ctx.reply(stockText());
+});
+
+bot.hears("💰 Saldo: Rp 0", async (ctx) => {
+  await ctx.reply("Saldo kamu saat ini: Rp 0");
+});
+
+bot.hears("🧾 Riwayat Transaksi", async (ctx) => {
+  await ctx.reply("Riwayat transaksi belum tersedia.");
+});
+
+bot.hears("✨ Best Seller", async (ctx) => {
+  await ctx.reply("Best seller saat ini belum diatur.");
+});
+
+bot.hears("How To Order ❓", async (ctx) => {
+  await ctx.reply(`Cara order:
+
+1. Klik 🛒 List Produk
+2. Pilih nomor produk
+3. Pilih metode Pembayaran 
+4. Bayar
+5. Produk dikirim otomatis`);
+});
 
   ctx.reply(
     "Selamat datang di Bot Auto Order!",
