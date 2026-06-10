@@ -23,9 +23,90 @@ if (!RAMASHOP_API_KEY) {
 
 const bot = new Telegraf(BOT_TOKEN.trim());
 
+async function checkDepositStatus(depositId) {
+  const response = await axios.get(
+    `https://ramashop.my.id/api/public/deposit/status/${depositId}`,
+    {
+      headers: {
+        "X-API-Key": RAMASHOP_API_KEY,
+        "Content-Type": "application/json"
+      }
+    }
+  );
+
+  return response.data;
+}
+
 async function createPayment(ctx, productName, amount) {
   const response = await axios.post(
     "https://ramashop.my.id/api/public/deposit/create",
+    {
+      amount: amount,
+      method: "qris"
+    },
+    {
+      headers: {
+        "X-API-Key": RAMASHOP_API_KEY,
+        "Content-Type": "application/json"
+      }
+    }
+  );
+
+  console.log("RAMASHOP RESPONSE:", response.data);
+
+  if (!response.data.success) {
+    throw new Error(response.data.message || "Gagal membuat QRIS Ramashop");
+  }
+
+  const data = response.data.data;
+  const depositId = data.depositId;
+
+  await ctx.reply(
+    `✅ Invoice berhasil dibuat
+
+Produk: ${productName}
+Nominal: Rp${amount}
+Total Bayar: Rp${data.totalAmount}
+
+Deposit ID:
+${depositId}
+
+Silakan bayar menggunakan QRIS:
+${data.qrImage}`
+  );
+
+  const interval = setInterval(async () => {
+    try {
+      const status = await checkDepositStatus(depositId);
+
+      console.log("STATUS:", status);
+
+      if (
+        status.data &&
+        status.data.status === "success"
+      ) {
+        clearInterval(interval);
+
+        await ctx.reply(
+          `✅ Pembayaran berhasil!
+
+Produk ${productName} sudah dibayar.`
+        );
+      }
+
+      if (
+        status.data &&
+        status.data.status === "already"
+      ) {
+        clearInterval(interval);
+      }
+
+    } catch (err) {
+      console.log("CHECK STATUS ERROR:", err.message);
+    }
+  }, 10000);
+}
+ "https://ramashop.my.id/api/public/deposit/create",
     {
       amount: amount,
       method: "qris"
