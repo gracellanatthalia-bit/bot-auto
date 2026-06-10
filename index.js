@@ -2,7 +2,6 @@ require("dotenv").config();
 
 const express = require("express");
 const axios = require("axios");
-const crypto = require("crypto");
 const { Telegraf, Markup } = require("telegraf");
 
 const app = express();
@@ -10,34 +9,19 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 const BOT_TOKEN = process.env.BOT_TOKEN;
+const RAMASHOP_API_KEY = process.env.RAMASHOP_API_KEY;
 
 if (!BOT_TOKEN) {
   console.error("BOT_TOKEN belum terbaca dari Railway Variables");
   process.exit(1);
 }
 
-const bot = new Telegraf(BOT_TOKEN.trim());
-
-const BASE_URL = "https://google.com";
-const IPAYMU_URL = "https://my.ipaymu.com/api/v2/payment";
-const IPAYMU_VA = process.env.IPAYMU_VA;
-const IPAYMU_API_KEY = process.env.IPAYMU_API_KEY;
-
-function createSignature(body) {
-  const jsonBody = JSON.stringify(body);
-  const bodyHash = crypto
-    .createHash("sha256")
-    .update(jsonBody)
-    .digest("hex")
-    .toLowerCase();
-
-  const stringToSign = "POST:" + IPAYMU_VA + ":" + bodyHash + ":" + IPAYMU_API_KEY;
-
-  return crypto
-    .createHmac("sha256", IPAYMU_API_KEY)
-    .update(stringToSign)
-    .digest("hex");
+if (!RAMASHOP_API_KEY) {
+  console.error("RAMASHOP_API_KEY belum terbaca dari Railway Variables");
+  process.exit(1);
 }
+
+const bot = new Telegraf(BOT_TOKEN.trim());
 
 async function createPayment(ctx, productName, amount) {
   const response = await axios.post(
@@ -48,22 +32,22 @@ async function createPayment(ctx, productName, amount) {
     },
     {
       headers: {
-        "X-API-Key": process.env.RAMASHOP_API_KEY,
+        "X-API-Key": RAMASHOP_API_KEY,
         "Content-Type": "application/json"
       }
     }
   );
 
-  console.log(response.data);
+  console.log("RAMASHOP RESPONSE:", response.data);
 
   if (!response.data.success) {
-    throw new Error("Gagal membuat QRIS");
+    throw new Error(response.data.message || "Gagal membuat QRIS Ramashop");
   }
 
   const data = response.data.data;
 
   await ctx.reply(
-    `✅ Invoice dibuat
+    `✅ Invoice berhasil dibuat
 
 Produk: ${productName}
 Nominal: Rp${amount}
@@ -72,37 +56,8 @@ Total Bayar: Rp${data.totalAmount}
 Deposit ID:
 ${data.depositId}
 
-QRIS:
+Silakan bayar menggunakan QRIS di link berikut:
 ${data.qrImage}`
-  );
-}
-  const signature = createSignature(body);
-
-  const response = await axios.post(IPAYMU_URL, body, {
-    headers: {
-      "Content-Type": "application/json",
-      va: IPAYMU_VA,
-      signature: signature,
-      timestamp: new Date().toISOString()
-    }
-  });
-
-  console.log("IPAYMU RESPONSE:", response.data);
-
-  const paymentUrl =
-    response.data?.Data?.Url ||
-    response.data?.Data?.url ||
-    response.data?.url;
-
-  if (!paymentUrl) {
-    throw new Error("Link pembayaran tidak ditemukan dari response iPaymu");
-  }
-
-  await ctx.reply(
-    `✅ Invoice berhasil dibuat\n\nProduk: ${productName}\nTotal: Rp${amount}\n\nKlik tombol di bawah untuk bayar:`,
-    Markup.inlineKeyboard([
-      [Markup.button.url("💳 Bayar Sekarang", paymentUrl)]
-    ])
   );
 }
 
@@ -129,8 +84,8 @@ bot.action("PRODUK_A", async (ctx) => {
   try {
     await createPayment(ctx, "Produk A", 10000);
   } catch (err) {
-    console.error(err.response?.data || err.message);
-    ctx.reply("Gagal membuat pembayaran. Cek API iPaymu atau Railway Logs.");
+    console.error("ERROR PRODUK_A:", err.response?.data || err.message);
+    ctx.reply("Gagal membuat pembayaran. Cek API Ramashop atau Railway Logs.");
   }
 });
 
@@ -138,15 +93,9 @@ bot.action("PRODUK_B", async (ctx) => {
   try {
     await createPayment(ctx, "Produk B", 20000);
   } catch (err) {
-    console.error(err.response?.data || err.message);
-    ctx.reply("Gagal membuat pembayaran. Cek API iPaymu atau Railway Logs.");
+    console.error("ERROR PRODUK_B:", err.response?.data || err.message);
+    ctx.reply("Gagal membuat pembayaran. Cek API Ramashop atau Railway Logs.");
   }
-});
-
-app.post("/webhook/ipaymu", (req, res) => {
-  console.log("CALLBACK IPAYMU:", req.body);
-
-  res.status(200).send("OK");
 });
 
 app.get("/", (req, res) => {
