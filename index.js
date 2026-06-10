@@ -464,7 +464,7 @@ bot.action("TOPUP_SALDO", async (ctx) => {
 Masukkan nominal topup.
 
 Contoh:
-10000`
+5.000`
   );
 });
 
@@ -737,8 +737,8 @@ Tambahkan stok dengan:
   }
 if (state.step === "TOPUP_AMOUNT") {
   const amount = Number(
-  text.replace(/\./g, "").replace(/,/g, "")
-);
+    text.replace(/\./g, "").replace(/,/g, "")
+  );
 
   if (!amount || amount < 1000) {
     return ctx.reply("Minimal topup Rp 1.000");
@@ -746,16 +746,64 @@ if (state.step === "TOPUP_AMOUNT") {
 
   delete adminState[ctx.from.id];
 
-  return ctx.reply(
-`💳 Topup dibuat
+  const response = await axios.post(
+    "https://ramashop.my.id/api/public/deposit/create",
+    {
+      amount: amount,
+      method: "qris"
+    },
+    {
+      headers: {
+        "X-API-Key": RAMASHOP_API_KEY,
+        "Content-Type": "application/json"
+      }
+    }
+  );
 
-Nominal:
+  const data = response.data.data;
+  const depositId = data.depositId;
+
+  await ctx.reply(
+`💳 QRIS Topup berhasil dibuat
+
+Nominal: ${formatRupiah(amount)}
+Total Bayar: ${formatRupiah(data.totalAmount)}
+
+Deposit ID:
+${depositId}
+
+Bayar QRIS:
+${data.qrImage}`
+  );
+
+  let attempts = 0;
+
+  const interval = setInterval(async () => {
+    attempts++;
+
+    const status = await checkDepositStatus(depositId);
+
+    if (status.data && status.data.status === "success") {
+      clearInterval(interval);
+
+      addBalance(ctx.from.id, amount);
+
+      return ctx.reply(
+`✅ Topup berhasil!
+
+Saldo bertambah:
 ${formatRupiah(amount)}
 
-(Fitur QRIS topup belum disambungkan)`
-  );
+Saldo sekarang:
+${formatRupiah(getBalance(ctx.from.id))}`
+      );
+    }
+
+    if (attempts >= 60) {
+      clearInterval(interval);
+    }
+  }, 10000);
 }
-});
 
 app.get("/", (req, res) => {
   res.send("Bot berjalan dengan baik");
