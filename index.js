@@ -30,6 +30,9 @@ const PRODUCTS_FILE = "products.json";
 const STOCKS_FILE = "stocks.json";
 const SNK_FILE = "snk.txt";
 
+const BALANCES_FILE = "balances.json";
+const TRANSACTIONS_FILE = "transactions.json";
+
 const adminState = {};
 const userOrders = {};
 
@@ -42,12 +45,9 @@ function ensureFile(file, defaultValue) {
 ensureFile(USERS_FILE, "[]");
 ensureFile(PRODUCTS_FILE, "{}");
 ensureFile(STOCKS_FILE, "{}");
-ensureFile(
-  SNK_FILE,
-  `• No refund
-• Garansi sesuai deskripsi produk
-• Wajib screenshot login maksimal 1x24 jam`
-);
+
+ensureFile(BALANCES_FILE, "{}");
+ensureFile(TRANSACTIONS_FILE, "[]");
 
 function readJSON(file) {
   try {
