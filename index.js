@@ -61,6 +61,27 @@ function writeJSON(file, data) {
   fs.writeFileSync(file, JSON.stringify(data, null, 2));
 }
 
+function getBalance(userId) {
+  const balances = readJSON(BALANCES_FILE);
+  return balances[userId] || 0;
+}
+
+function addBalance(userId, amount) {
+  const balances = readJSON(BALANCES_FILE);
+
+  balances[userId] = (balances[userId] || 0) + amount;
+
+  writeJSON(BALANCES_FILE, balances);
+}
+
+function reduceBalance(userId, amount) {
+  const balances = readJSON(BALANCES_FILE);
+
+  balances[userId] = (balances[userId] || 0) - amount;
+
+  writeJSON(BALANCES_FILE, balances);
+}
+
 function readText(file) {
   return fs.readFileSync(file, "utf8");
 }
