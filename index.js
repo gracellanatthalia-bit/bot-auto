@@ -179,10 +179,13 @@ Terima kasih telah membeli.`
 }
 
 bot.start((ctx) => {
+  users.add(ctx.from.id);
+
   ctx.reply(
     "Selamat datang di Bot Auto Order!",
     Markup.inlineKeyboard([
-      [Markup.button.callback("📦 Order Produk", "ORDER")]
+      [Markup.button.callback("📦 Order Produk", "ORDER")],
+      [Markup.button.callback("📜 SNK", "SNK")]
     ])
   );
 });
