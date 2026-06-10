@@ -288,6 +288,20 @@ bot.hears("🛒 List Produk", async (ctx) => {
 });
 
 bot.hears("💰 Saldo: Rp 0", async (ctx) => {
+  const saldo = getBalance(ctx.from.id);
+
+  await ctx.reply(
+`━━━━━━━━ 『 SALDO 』
+• ID : ${ctx.from.id}
+• Username : ${ctx.from.username || "-"}
+• Saldo : ${formatRupiah(saldo)}
+
+━━━━━━━━`,
+    Markup.inlineKeyboard([
+      [Markup.button.callback("💳 TOPUP SALDO", "TOPUP_SALDO")]
+    ])
+  );
+});
   const totalUser = readJSON(USERS_FILE).length;
 
   await ctx.reply(
@@ -437,6 +451,18 @@ bot.action("CREATE_QRIS", async (ctx) => {
 bot.action("PAY_SALDO", async (ctx) => {
   await ctx.answerCbQuery("Saldo belum tersedia.");
   await ctx.reply("Fitur balance belum aktif. Silakan gunakan QRIS.");
+});
+
+bot.action("TOPUP_SALDO", async (ctx) => {
+  await ctx.answerCbQuery();
+
+  await ctx.reply(
+`💳 Topup Saldo
+
+Silakan gunakan QRIS untuk mengisi saldo.
+
+Minimal topup: Rp 1.000`
+  );
 });
 
 
