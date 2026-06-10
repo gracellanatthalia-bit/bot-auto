@@ -267,15 +267,15 @@ bot.hears("🛒 List Produk", async (ctx) => {
 });
 
 bot.hears("💰 Saldo: Rp 0", async (ctx) => {
-  await ctx.reply("Saldo kamu saat ini: Rp 0");
+  await ctx.reply("💰 Saldo kamu saat ini: Rp 0");
 });
 
 bot.hears("🧾 Riwayat Transaksi", async (ctx) => {
-  await ctx.reply("Riwayat transaksi belum tersedia.");
+  await ctx.reply("🧾 Riwayat transaksi belum tersedia.");
 });
 
 bot.hears("✨ Best Seller", async (ctx) => {
-  await ctx.reply("Best seller saat ini belum diatur.");
+  await ctx.reply("✨ Best seller saat ini belum diatur.");
 });
 
 bot.hears("How To Order ❓", async (ctx) => {
@@ -283,7 +283,7 @@ bot.hears("How To Order ❓", async (ctx) => {
 
 1. Klik 🛒 List Produk
 2. Pilih nomor produk
-3. Pilih metode Pembayaran 
+3. Pilih metode Pembayaran
 4. Bayar
 5. Produk dikirim otomatis`);
 });
