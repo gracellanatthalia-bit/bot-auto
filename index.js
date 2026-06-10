@@ -282,6 +282,12 @@ function mainMenuKeyboard() {
 bot.start((ctx) => {
   addUser(ctx.from.id);
 
+  ctx.reply(
+    "Selamat datang di Bot Auto Order!",
+    mainMenuKeyboard()
+  );
+});
+
 bot.hears(/Saldo/i, async (ctx) => {
   const saldo = getBalance(ctx.from.id);
 
