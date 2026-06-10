@@ -261,11 +261,6 @@ function mainMenuKeyboard() {
 bot.start((ctx) => {
   addUser(ctx.from.id);
 
-  ctx.reply(
-    "Selamat datang di Bot Auto Order!",
-    mainMenuKeyboard()
-  );
-
 bot.hears("🛒 List Produk", async (ctx) => {
   addUser(ctx.from.id);
   await ctx.reply(stockText());
