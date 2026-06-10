@@ -804,6 +804,7 @@ ${formatRupiah(getBalance(ctx.from.id))}`
     }
   }, 10000);
 }
+});
 
 app.get("/", (req, res) => {
   res.send("Bot berjalan dengan baik");
