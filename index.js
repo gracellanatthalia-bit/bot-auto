@@ -75,7 +75,30 @@ Silakan bayar menggunakan QRIS:
 ${data.qrImage}`
   );
 
-  const interval = setInterval(async () => {
+const interval = setInterval(async () => {
+    try {
+      const status = await checkDepositStatus(depositId);
+
+      console.log("STATUS:", status);
+
+      if (status.data && status.data.status === "success") {
+        clearInterval(interval);
+
+        await ctx.reply(
+          `✅ Pembayaran berhasil!
+
+Produk ${productName} sudah dibayar.`
+        );
+      }
+
+      if (status.data && status.data.status === "already") {
+        clearInterval(interval);
+      }
+    } catch (err) {
+      console.log("CHECK STATUS ERROR:", err.message);
+    }
+  }, 10000);
+}
     try {
       const status = await checkDepositStatus(depositId);
 
