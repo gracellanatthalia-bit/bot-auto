@@ -282,12 +282,7 @@ function mainMenuKeyboard() {
 bot.start((ctx) => {
   addUser(ctx.from.id);
 
-bot.hears("🛒 List Produk", async (ctx) => {
-  addUser(ctx.from.id);
-  await ctx.reply(stockText());
-});
-
-bot.hears("💰 Saldo: Rp 0", async (ctx) => {
+bot.hears(/Saldo/i, async (ctx) => {
   const saldo = getBalance(ctx.from.id);
 
   await ctx.reply(
@@ -301,6 +296,11 @@ bot.hears("💰 Saldo: Rp 0", async (ctx) => {
       [Markup.button.callback("💳 TOPUP SALDO", "TOPUP_SALDO")]
     ])
   );
+});
+
+bot.hears("🛒 List Produk", async (ctx) => {
+  addUser(ctx.from.id);
+  await ctx.reply(stockText());
 });
 
 bot.hears("🧾 Riwayat Transaksi", async (ctx) => {
