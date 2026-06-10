@@ -265,7 +265,6 @@ bot.start((ctx) => {
     "Selamat datang di Bot Auto Order!",
     mainMenuKeyboard()
   );
-});
 
 bot.hears("🛒 List Produk", async (ctx) => {
   addUser(ctx.from.id);
