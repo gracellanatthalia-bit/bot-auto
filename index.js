@@ -2,6 +2,7 @@ require("dotenv").config();
 
 const express = require("express");
 const axios = require("axios");
+const fs = require("fs");
 const { Telegraf, Markup } = require("telegraf");
 
 const app = express();
@@ -10,6 +11,7 @@ app.use(express.urlencoded({ extended: true }));
 
 const BOT_TOKEN = process.env.BOT_TOKEN;
 const RAMASHOP_API_KEY = process.env.RAMASHOP_API_KEY;
+const ADMIN_ID = 5487015519;
 
 if (!BOT_TOKEN) {
   console.error("BOT_TOKEN belum terbaca dari Railway Variables");
@@ -23,66 +25,127 @@ if (!RAMASHOP_API_KEY) {
 
 const bot = new Telegraf(BOT_TOKEN.trim());
 
-const ADMIN_ID = 5487015519;
-const users = new Set();
+const USERS_FILE = "users.json";
+const PRODUCTS_FILE = "products.json";
+const STOCKS_FILE = "stocks.json";
+const SNK_FILE = "snk.txt";
 
-const SNK_TEXT = `📜 Syarat & Ketentuan
-
-1. Produk digital tidak bisa refund setelah dikirim.
-2. Garansi sesuai deskripsi produk.
-3. Pastikan membaca deskripsi sebelum membeli.
-★ 𝐖𝐀𝐑𝐀𝐍𝐓𝐘 𝐓𝐎 𝐀𝐂𝐓𝐈𝐕𝐄 ★
-
-ㅤ— wajib send screenshot login max 1x24jam ke [ https://t.me/twestip/134 ]
-ㅤ— apabila ada problem dengan akun nya mohon untuk mengisi format garansi di @warantyj
-ㅤ— tidak ss login lebih dari 24jam dianggap tidak ada garansi
-ㅤㅤㅤㅤㅤㅤㅤㅤㅤ`;
-
-const product = {
-  name: "netflix",
-  price: 100,
-  stock: 5,
-  desc: "nogar"
-};
-
+const adminState = {};
 const userOrders = {};
 
-function formatRupiah(number) {
-  return "Rp " + number.toLocaleString("id-ID");
+function ensureFile(file, defaultValue) {
+  if (!fs.existsSync(file)) {
+    fs.writeFileSync(file, defaultValue);
+  }
 }
 
-function orderText(userId) {
-  const qty = userOrders[userId]?.qty || 1;
-  const total = product.price * qty;
+ensureFile(USERS_FILE, "[]");
+ensureFile(PRODUCTS_FILE, "{}");
+ensureFile(STOCKS_FILE, "{}");
+ensureFile(
+  SNK_FILE,
+  `• No refund
+• Garansi sesuai deskripsi produk
+• Wajib screenshot login maksimal 1x24 jam`
+);
 
-  return `KONFIRMASI PESANAN
-
-Produk: ${product.name}
-Stok Tersedia: ${product.stock} pcs
-Harga Satuan: ${formatRupiah(product.price)}
-----------------
-Jumlah Pesanan: ${qty} pcs
-Total Harga: ${formatRupiah(total)}
-----------------
-Deskripsi Produk:
-• ${product.desc}`;
+function readJSON(file) {
+  try {
+    return JSON.parse(fs.readFileSync(file, "utf8"));
+  } catch (err) {
+    return file === USERS_FILE ? [] : {};
+  }
 }
 
-function orderKeyboard() {
+function writeJSON(file, data) {
+  fs.writeFileSync(file, JSON.stringify(data, null, 2));
+}
+
+function readText(file) {
+  return fs.readFileSync(file, "utf8");
+}
+
+function writeText(file, text) {
+  fs.writeFileSync(file, text);
+}
+
+function isAdmin(ctx) {
+  return ctx.from && ctx.from.id === ADMIN_ID;
+}
+
+function addUser(userId) {
+  const users = readJSON(USERS_FILE);
+  if (!users.includes(userId)) {
+    users.push(userId);
+    writeJSON(USERS_FILE, users);
+  }
+}
+
+function formatRupiah(num) {
+  return "Rp " + Number(num).toLocaleString("id-ID");
+}
+
+function getProducts() {
+  return readJSON(PRODUCTS_FILE);
+}
+
+function getStocks() {
+  return readJSON(STOCKS_FILE);
+}
+
+function stockText() {
+  const products = getProducts();
+  const stocks = getStocks();
+
+  const ids = Object.keys(products);
+
+  if (ids.length === 0) {
+    return "Belum ada produk. Admin bisa tambah produk dengan /addproduk";
+  }
+
+  let text = "📦 STOK TERSEDIA\n\n";
+
+  ids.forEach((id, index) => {
+    const p = products[id];
+    const stockCount = stocks[id] ? stocks[id].length : 0;
+    text += `[${index + 1}] ${p.name.toUpperCase()} → ${formatRupiah(p.price)} (x${stockCount})\n`;
+  });
+
+  text += "\nKetik angka produk yang ingin dibeli.\nContoh: 1";
+  return text;
+}
+
+function getProductByNumber(number) {
+  const products = getProducts();
+  const ids = Object.keys(products);
+  const id = ids[number - 1];
+
+  if (!id) return null;
+
+  return {
+    id,
+    ...products[id]
+  };
+}
+
+function paymentKeyboard() {
   return Markup.inlineKeyboard([
-    [
-      Markup.button.callback("- Semua", "MIN_ALL"),
-      Markup.button.callback("+ Semua", "PLUS_ALL")
-    ],
-    [
-      Markup.button.callback("-5", "MIN_5"),
-      Markup.button.callback("-1", "MIN_1"),
-      Markup.button.callback("+1", "PLUS_1"),
-      Markup.button.callback("+5", "PLUS_5")
-    ],
-    [Markup.button.callback("Pilih metode pembayaran", "PAY")],
+    [Markup.button.callback("QRIS", "PAY_QRIS")],
+    [Markup.button.callback("Kembali", "BACK_STOCK")],
     [Markup.button.callback("Batalkan", "CANCEL")]
   ]);
+}
+
+function deliveryText(product, account) {
+  const snk = readText(SNK_FILE);
+  const [email, password] = account.split("|");
+
+  return `${product.name.toUpperCase()}
+
+Email: ${email}
+Password: ${password}
+
+${snk}`;
 }
 
 async function checkDepositStatus(depositId) {
@@ -99,11 +162,23 @@ async function checkDepositStatus(depositId) {
   return response.data;
 }
 
-async function createPayment(ctx, amount, qty) {
+async function createPayment(ctx, productId) {
+  const products = getProducts();
+  const stocks = getStocks();
+  const product = products[productId];
+
+  if (!product) {
+    return ctx.reply("Produk tidak ditemukan.");
+  }
+
+  if (!stocks[productId] || stocks[productId].length < 1) {
+    return ctx.reply("Stok produk habis.");
+  }
+
   const response = await axios.post(
     "https://ramashop.my.id/api/public/deposit/create",
     {
-      amount: amount,
+      amount: Number(product.price),
       method: "qris"
     },
     {
@@ -127,7 +202,7 @@ async function createPayment(ctx, amount, qty) {
     `✅ Invoice berhasil dibuat
 
 Produk: ${product.name}
-Jumlah: ${qty} pcs
+Harga: ${formatRupiah(product.price)}
 Total Bayar: ${formatRupiah(data.totalAmount)}
 
 Deposit ID:
@@ -149,36 +224,13 @@ ${data.qrImage}`
       if (status.data && status.data.status === "success") {
         clearInterval(interval);
 
-        product.stock -= qty;
+        const latestStocks = getStocks();
+        const account = latestStocks[productId].shift();
+        writeJSON(STOCKS_FILE, latestStocks);
 
-await ctx.reply(`
-✅ PEMBAYARAN BERHASIL
-
-Produk: ${productName}
-
-Email: netflix@gmail.com
-Password: password123
-
-━━━━━━━━━━━━━━
-
-📜 Syarat & Ketentuan
-
-• No refund
-• Garansi 1x24 jam
-• Login maksimal 1 device
-• Jangan mengganti email akun
-
-★ 𝐖𝐀𝐑𝐀𝐍𝐓𝐘 𝐓𝐎 𝐀𝐂𝐓𝐈𝐕𝐄 ★
-
-ㅤ— wajib send screenshot login max 1x24jam ke [ https://t.me/twestip/134 ]
-ㅤ— apabila ada problem dengan akun nya mohon untuk mengisi format garansi di @warantyj
-ㅤ— tidak ss login lebih dari 24jam dianggap tidak ada garansi
-ㅤㅤㅤㅤㅤㅤㅤㅤㅤ
-
-━━━━━━━━━━━━━━
-
-Terima kasih telah berbelanja 🙏
-`);
+        await ctx.reply("✅ Pembayaran berhasil! Produk dikirim otomatis:");
+        await ctx.reply(deliveryText(product, account));
+      }
 
       if (status.data && status.data.status === "already") {
         clearInterval(interval);
@@ -195,7 +247,7 @@ Terima kasih telah berbelanja 🙏
 }
 
 bot.start((ctx) => {
-  users.add(ctx.from.id);
+  addUser(ctx.from.id);
 
   ctx.reply(
     "Selamat datang di Bot Auto Order!",
@@ -207,73 +259,193 @@ bot.start((ctx) => {
 });
 
 bot.action("ORDER", async (ctx) => {
-  const userId = ctx.from.id;
+  addUser(ctx.from.id);
+  await ctx.reply(stockText());
+});
 
-  userOrders[userId] = {
-    qty: 1
+bot.action("BACK_STOCK", async (ctx) => {
+  await ctx.reply(stockText());
+});
+
+bot.action("CANCEL", async (ctx) => {
+  delete userOrders[ctx.from.id];
+  await ctx.reply("Pesanan dibatalkan.");
+});
+
+bot.action("SNK", async (ctx) => {
+  await ctx.reply(readText(SNK_FILE));
+});
+
+bot.hears(/^[0-9]+$/, async (ctx) => {
+  addUser(ctx.from.id);
+
+  const number = Number(ctx.message.text);
+  const product = getProductByNumber(number);
+
+  if (!product) return;
+
+  const stocks = getStocks();
+  const stockCount = stocks[product.id] ? stocks[product.id].length : 0;
+
+  userOrders[ctx.from.id] = {
+    productId: product.id
   };
 
-  await ctx.reply(orderText(userId), orderKeyboard());
+  await ctx.reply(
+    `KONFIRMASI PESANAN
+
+Produk: ${product.name}
+Stok Tersedia: ${stockCount} pcs
+Harga: ${formatRupiah(product.price)}
+Deskripsi: ${product.desc}
+
+Silakan pilih metode pembayaran:`,
+    paymentKeyboard()
+  );
 });
 
-bot.action(["PLUS_1", "PLUS_5", "PLUS_ALL", "MIN_1", "MIN_5", "MIN_ALL"], async (ctx) => {
-  const userId = ctx.from.id;
-
-  if (!userOrders[userId]) {
-    userOrders[userId] = { qty: 1 };
-  }
-
-  let qty = userOrders[userId].qty;
-
-  if (ctx.match[0] === "PLUS_1") qty += 1;
-  if (ctx.match[0] === "PLUS_5") qty += 5;
-  if (ctx.match[0] === "PLUS_ALL") qty = product.stock;
-
-  if (ctx.match[0] === "MIN_1") qty -= 1;
-  if (ctx.match[0] === "MIN_5") qty -= 5;
-  if (ctx.match[0] === "MIN_ALL") qty = 1;
-
-  if (qty < 1) qty = 1;
-  if (qty > product.stock) qty = product.stock;
-
-  userOrders[userId].qty = qty;
-
-  await ctx.editMessageText(orderText(userId), orderKeyboard());
-});
-
-bot.action("PAY", async (ctx) => {
+bot.action("PAY_QRIS", async (ctx) => {
   try {
-    const userId = ctx.from.id;
-    const qty = userOrders[userId]?.qty || 1;
+    const order = userOrders[ctx.from.id];
 
-    if (qty > product.stock) {
-      return ctx.reply("Stok tidak cukup.");
+    if (!order) {
+      return ctx.reply("Silakan pilih produk dulu.");
     }
 
-    const total = product.price * qty;
-
-    await createPayment(ctx, total, qty);
+    await createPayment(ctx, order.productId);
   } catch (err) {
     console.error("PAYMENT ERROR:", err.response?.data || err.message);
     ctx.reply("Gagal membuat pembayaran. Cek Railway Logs.");
   }
 });
 
-bot.action("CANCEL", async (ctx) => {
-  const userId = ctx.from.id;
-  delete userOrders[userId];
+/* ================= ADMIN PANEL ================= */
 
-  await ctx.editMessageText("Pesanan dibatalkan.");
+bot.command("admin", async (ctx) => {
+  if (!isAdmin(ctx)) return ctx.reply("Anda bukan admin.");
+
+  ctx.reply(`ADMIN PANEL
+
+/addproduk - tambah produk
+/listproduk - lihat produk
+/delproduk id_produk - hapus produk
+
+/addstock id_produk - tambah stok akun
+/setsnk - ubah SNK
+
+/broadcast isi pesan
+Kirim foto dengan caption:
+/broadcastfoto isi caption`);
 });
 
-bot.action("SNK", async (ctx) => {
-  await ctx.reply(SNK_TEXT);
+bot.command("listproduk", async (ctx) => {
+  if (!isAdmin(ctx)) return ctx.reply("Anda bukan admin.");
+
+  const products = getProducts();
+  const stocks = getStocks();
+
+  const ids = Object.keys(products);
+
+  if (ids.length === 0) {
+    return ctx.reply("Belum ada produk.");
+  }
+
+  let text = "DAFTAR PRODUK\n\n";
+
+  ids.forEach((id, index) => {
+    const p = products[id];
+    const stockCount = stocks[id] ? stocks[id].length : 0;
+
+    text += `${index + 1}. ID: ${id}
+Nama: ${p.name}
+Harga: ${formatRupiah(p.price)}
+Stok: ${stockCount}
+Desc: ${p.desc}
+
+`;
+  });
+
+  ctx.reply(text);
+});
+
+bot.command("addproduk", async (ctx) => {
+  if (!isAdmin(ctx)) return ctx.reply("Anda bukan admin.");
+
+  adminState[ctx.from.id] = {
+    step: "ADD_PRODUCT_NAME",
+    data: {}
+  };
+
+  ctx.reply("Masukkan nama produk:");
+});
+
+bot.command("delproduk", async (ctx) => {
+  if (!isAdmin(ctx)) return ctx.reply("Anda bukan admin.");
+
+  const id = ctx.message.text.replace("/delproduk", "").trim();
+
+  if (!id) {
+    return ctx.reply("Format: /delproduk id_produk");
+  }
+
+  const products = getProducts();
+  const stocks = getStocks();
+
+  if (!products[id]) {
+    return ctx.reply("Produk tidak ditemukan.");
+  }
+
+  delete products[id];
+  delete stocks[id];
+
+  writeJSON(PRODUCTS_FILE, products);
+  writeJSON(STOCKS_FILE, stocks);
+
+  ctx.reply("Produk berhasil dihapus.");
+});
+
+bot.command("addstock", async (ctx) => {
+  if (!isAdmin(ctx)) return ctx.reply("Anda bukan admin.");
+
+  const id = ctx.message.text.replace("/addstock", "").trim();
+
+  if (!id) {
+    return ctx.reply("Format: /addstock id_produk");
+  }
+
+  const products = getProducts();
+
+  if (!products[id]) {
+    return ctx.reply("Produk tidak ditemukan.");
+  }
+
+  adminState[ctx.from.id] = {
+    step: "ADD_STOCK",
+    productId: id
+  };
+
+  ctx.reply(`Kirim stok akun untuk produk ${products[id].name}
+
+Format:
+email|password
+
+Bisa banyak baris:
+email1@gmail.com|pass1
+email2@gmail.com|pass2`);
+});
+
+bot.command("setsnk", async (ctx) => {
+  if (!isAdmin(ctx)) return ctx.reply("Anda bukan admin.");
+
+  adminState[ctx.from.id] = {
+    step: "SET_SNK"
+  };
+
+  ctx.reply("Kirim teks SNK baru:");
 });
 
 bot.command("broadcast", async (ctx) => {
-  if (ctx.from.id !== ADMIN_ID) {
-    return ctx.reply("Anda bukan admin.");
-  }
+  if (!isAdmin(ctx)) return ctx.reply("Anda bukan admin.");
 
   const text = ctx.message.text.replace("/broadcast", "").trim();
 
@@ -281,6 +453,7 @@ bot.command("broadcast", async (ctx) => {
     return ctx.reply("Format: /broadcast isi pesan");
   }
 
+  const users = readJSON(USERS_FILE);
   let success = 0;
 
   for (const userId of users) {
@@ -296,7 +469,7 @@ bot.command("broadcast", async (ctx) => {
 });
 
 bot.on("photo", async (ctx) => {
-  if (ctx.from.id !== ADMIN_ID) return;
+  if (!isAdmin(ctx)) return;
 
   const caption = ctx.message.caption || "";
 
@@ -305,6 +478,7 @@ bot.on("photo", async (ctx) => {
   const text = caption.replace("/broadcastfoto", "").trim();
   const photo = ctx.message.photo[ctx.message.photo.length - 1].file_id;
 
+  const users = readJSON(USERS_FILE);
   let success = 0;
 
   for (const userId of users) {
@@ -319,6 +493,98 @@ bot.on("photo", async (ctx) => {
   }
 
   ctx.reply(`Broadcast foto terkirim ke ${success} user.`);
+});
+
+bot.on("text", async (ctx) => {
+  const state = adminState[ctx.from.id];
+
+  if (!state || !isAdmin(ctx)) return;
+
+  const text = ctx.message.text;
+
+  if (state.step === "ADD_PRODUCT_NAME") {
+    state.data.name = text;
+    state.step = "ADD_PRODUCT_PRICE";
+    return ctx.reply("Masukkan harga produk:");
+  }
+
+  if (state.step === "ADD_PRODUCT_PRICE") {
+    const price = Number(text);
+
+    if (!price || price < 1) {
+      return ctx.reply("Harga harus angka.");
+    }
+
+    state.data.price = price;
+    state.step = "ADD_PRODUCT_DESC";
+    return ctx.reply("Masukkan deskripsi produk:");
+  }
+
+  if (state.step === "ADD_PRODUCT_DESC") {
+    state.data.desc = text;
+
+    const products = getProducts();
+    const stocks = getStocks();
+
+    const id = Date.now().toString();
+
+    products[id] = {
+      name: state.data.name,
+      price: state.data.price,
+      desc: state.data.desc
+    };
+
+    stocks[id] = [];
+
+    writeJSON(PRODUCTS_FILE, products);
+    writeJSON(STOCKS_FILE, stocks);
+
+    delete adminState[ctx.from.id];
+
+    return ctx.reply(`Produk berhasil ditambahkan.
+
+ID Produk:
+${id}
+
+Nama: ${state.data.name}
+Harga: ${formatRupiah(state.data.price)}
+Desc: ${state.data.desc}
+
+Tambahkan stok dengan:
+/addstock ${id}`);
+  }
+
+  if (state.step === "ADD_STOCK") {
+    const lines = text
+      .split("\n")
+      .map((line) => line.trim())
+      .filter((line) => line.includes("|"));
+
+    if (lines.length === 0) {
+      return ctx.reply("Format stok salah. Gunakan email|password");
+    }
+
+    const stocks = getStocks();
+
+    if (!stocks[state.productId]) {
+      stocks[state.productId] = [];
+    }
+
+    stocks[state.productId].push(...lines);
+    writeJSON(STOCKS_FILE, stocks);
+
+    delete adminState[ctx.from.id];
+
+    return ctx.reply(`${lines.length} stok berhasil ditambahkan.`);
+  }
+
+  if (state.step === "SET_SNK") {
+    writeText(SNK_FILE, text);
+
+    delete adminState[ctx.from.id];
+
+    return ctx.reply("SNK berhasil diperbarui.");
+  }
 });
 
 app.get("/", (req, res) => {
