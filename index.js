@@ -152,7 +152,7 @@ function getProductByNumber(number) {
 function paymentKeyboard() {
   return Markup.inlineKeyboard([
     [
-      Markup.button.callback("💰 Saldo: Rp 0", "PAY_SALDO"),
+      Markup.button.callback(`💰 Saldo: ${formatRupiah(getBalance(ctx.from.id))}`, "PAY_SALDO"),
       Markup.button.callback("QRIS", "PAY_QRIS")
     ],
     [Markup.button.callback("Kembali", "BACK_STOCK")],
