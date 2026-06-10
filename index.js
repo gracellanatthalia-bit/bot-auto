@@ -351,7 +351,9 @@ bot.hears(/^[0-9]+$/, async (ctx) => {
   const number = Number(ctx.message.text);
   const product = getProductByNumber(number);
 
-  if (!product) return;
+  if (!product) {
+    return ctx.reply("Produk tidak ditemukan.");
+  }
 
   const stocks = getStocks();
   const stockCount = stocks[product.id] ? stocks[product.id].length : 0;
@@ -361,7 +363,7 @@ bot.hears(/^[0-9]+$/, async (ctx) => {
   };
 
   await ctx.reply(
-    `KONFIRMASI PESANAN
+`KONFIRMASI PESANAN
 
 Produk: ${product.name}
 Stok Tersedia: ${stockCount} pcs
