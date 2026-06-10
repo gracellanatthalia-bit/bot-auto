@@ -342,16 +342,6 @@ Informasi Kamu
   }
 });
 
-    if (!order) {
-      return ctx.reply("Silakan pilih produk dulu.");
-    }
-
-  } catch (err) {
-    console.error("PAYMENT ERROR:", err.response?.data || err.message);
-    ctx.reply("Gagal membuat pembayaran. Cek Railway Logs.");
-  }
-});
-
 bot.action("CREATE_QRIS", async (ctx) => {
   try {
     const order = userOrders[ctx.from.id];
@@ -363,17 +353,13 @@ bot.action("CREATE_QRIS", async (ctx) => {
     await createPayment(ctx, order.productId);
   } catch (err) {
     console.error("CREATE QRIS ERROR:", err.response?.data || err.message);
-    ctx.reply("Gagal membuat QRIS. Cek Railway
-
-    if (!order) {
-      return ctx.reply("Silakan pilih produk dulu.");
-    }
-
-    await createPayment(ctx, order.productId);
-  } catch (err) {
-    console.error("CREATE QRIS ERROR:", err.response?.data || err.message);
     ctx.reply("Gagal membuat QRIS. Cek Railway Logs.");
   }
+});
+
+bot.action("PAY_SALDO", async (ctx) => {
+  await ctx.answerCbQuery("Saldo belum tersedia.");
+  await ctx.reply("Fitur balance belum aktif. Silakan gunakan QRIS.");
 });
 
 /* ================= ADMIN PANEL ================= */
