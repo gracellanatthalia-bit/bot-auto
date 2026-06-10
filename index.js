@@ -267,7 +267,27 @@ bot.hears("🛒 List Produk", async (ctx) => {
 });
 
 bot.hears("💰 Saldo: Rp 0", async (ctx) => {
-  await ctx.reply("💰 Saldo kamu saat ini: Rp 0");
+  const totalUser = readJSON(USERS_FILE).length;
+
+  await ctx.reply(
+`────────「 SALDO 」────────
+
+• ID : ${ctx.from.id}
+• Username : ${ctx.from.username || "-"}
+• Saldo : Rp 0
+• Jumlah Pembelian : 0
+• Total User : ${totalUser}
+
+────────────────────`,
+    Markup.inlineKeyboard([
+      [
+        Markup.button.callback(
+          "💳 Topup Saldo",
+          "TOPUP_SALDO"
+        )
+      ]
+    ])
+  );
 });
 
 bot.hears("🧾 Riwayat Transaksi", async (ctx) => {
