@@ -736,7 +736,9 @@ Tambahkan stok dengan:
     return ctx.reply("SNK berhasil diperbarui.");
   }
 if (state.step === "TOPUP_AMOUNT") {
-  const amount = Number(text);
+  const amount = Number(
+  text.replace(/\./g, "").replace(/,/g, "")
+);
 
   if (!amount || amount < 1000) {
     return ctx.reply("Minimal topup Rp 1.000");
