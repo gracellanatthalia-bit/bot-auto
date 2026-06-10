@@ -364,6 +364,15 @@ bot.action("CREATE_QRIS", async (ctx) => {
     await createPayment(ctx, order.productId);
   } catch (err) {
     console.error("CREATE QRIS ERROR:", err.response?.data || err.message);
+    ctx.reply("Gagal membuat QRIS. Cek Railway
+
+    if (!order) {
+      return ctx.reply("Silakan pilih produk dulu.");
+    }
+
+    await createPayment(ctx, order.productId);
+  } catch (err) {
+    console.error("CREATE QRIS ERROR:", err.response?.data || err.message);
     ctx.reply("Gagal membuat QRIS. Cek Railway Logs.");
   }
 });
