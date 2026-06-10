@@ -152,14 +152,21 @@ function getProductByNumber(number) {
 function paymentKeyboard(ctx) {
   return Markup.inlineKeyboard([
     [
-      Markup.button.callback(
-        `💰 Saldo: ${formatRupiah(getBalance(ctx.from.id))}`,
-        "PAY_SALDO"
-      ),
-      Markup.button.callback("QRIS", "PAY_QRIS")
+      Markup.button.callback("- Semua", "QTY_MINUS_ALL"),
+      Markup.button.callback("+ Semua", "QTY_PLUS_ALL")
     ],
-    [Markup.button.callback("Kembali", "BACK_STOCK")],
-    [Markup.button.callback("Batalkan", "CANCEL")]
+    [
+      Markup.button.callback("-5", "QTY_MINUS_5"),
+      Markup.button.callback("-1", "QTY_MINUS_1"),
+      Markup.button.callback("+1", "QTY_PLUS_1"),
+      Markup.button.callback("+5", "QTY_PLUS_5")
+    ],
+    [
+      Markup.button.callback("Pilih metode pembayaran", "PAY_QRIS")
+    ],
+    [
+      Markup.button.callback("Batalkan", "CANCEL")
+    ]
   ]);
 }
 
