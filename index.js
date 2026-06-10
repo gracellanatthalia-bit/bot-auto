@@ -23,6 +23,53 @@ if (!RAMASHOP_API_KEY) {
 
 const bot = new Telegraf(BOT_TOKEN.trim());
 
+const product = {
+  name: "netflix",
+  price: 100,
+  stock: 5,
+  desc: "nogar"
+};
+
+const userOrders = {};
+
+function formatRupiah(number) {
+  return "Rp " + number.toLocaleString("id-ID");
+}
+
+function orderText(userId) {
+  const qty = userOrders[userId]?.qty || 1;
+  const total = product.price * qty;
+
+  return `KONFIRMASI PESANAN
+
+Produk: ${product.name}
+Stok Tersedia: ${product.stock} pcs
+Harga Satuan: ${formatRupiah(product.price)}
+----------------
+Jumlah Pesanan: ${qty} pcs
+Total Harga: ${formatRupiah(total)}
+----------------
+Deskripsi Produk:
+• ${product.desc}`;
+}
+
+function orderKeyboard() {
+  return Markup.inlineKeyboard([
+    [
+      Markup.button.callback("- Semua", "MIN_ALL"),
+      Markup.button.callback("+ Semua", "PLUS_ALL")
+    ],
+    [
+      Markup.button.callback("-5", "MIN_5"),
+      Markup.button.callback("-1", "MIN_1"),
+      Markup.button.callback("+1", "PLUS_1"),
+      Markup.button.callback("+5", "PLUS_5")
+    ],
+    [Markup.button.callback("Pilih metode pembayaran", "PAY")],
+    [Markup.button.callback("Batalkan", "CANCEL")]
+  ]);
+}
+
 async function checkDepositStatus(depositId) {
   const response = await axios.get(
     `https://ramashop.my.id/api/public/deposit/status/${depositId}`,
@@ -37,7 +84,7 @@ async function checkDepositStatus(depositId) {
   return response.data;
 }
 
-async function createPayment(ctx, productName, amount) {
+async function createPayment(ctx, amount, qty) {
   const response = await axios.post(
     "https://ramashop.my.id/api/public/deposit/create",
     {
@@ -64,14 +111,14 @@ async function createPayment(ctx, productName, amount) {
   await ctx.reply(
     `✅ Invoice berhasil dibuat
 
-Produk: ${productName}
-Nominal: Rp${amount}
-Total Bayar: Rp${data.totalAmount}
+Produk: ${product.name}
+Jumlah: ${qty} pcs
+Total Bayar: ${formatRupiah(data.totalAmount)}
 
 Deposit ID:
 ${depositId}
 
-Silakan bayar menggunakan QRIS:
+Silakan bayar QRIS:
 ${data.qrImage}`
   );
 
@@ -87,20 +134,19 @@ ${data.qrImage}`
       if (status.data && status.data.status === "success") {
         clearInterval(interval);
 
-await ctx.reply(
-  `✅ Pembayaran berhasil!
+        product.stock -= qty;
 
-Produk: ${productName}
+        await ctx.reply(
+          `✅ Pembayaran berhasil!
 
-📧 Email:
-premium@gmail.com
+Produk: ${product.name}
+Jumlah: ${qty} pcs
 
-🔑 Password:
-masuk123
-ㅤㅤㅤㅤㅤㅤㅤㅤㅤ
+Akun Premium:
+emailnetflix@gmail.com | password123
 
 Terima kasih telah membeli.`
-);
+        );
       }
 
       if (status.data && status.data.status === "already") {
@@ -109,7 +155,7 @@ Terima kasih telah membeli.`
 
       if (attempts >= 60) {
         clearInterval(interval);
-        console.log("Cek pembayaran dihentikan karena timeout.");
+        console.log("Cek pembayaran timeout.");
       }
     } catch (err) {
       console.log("CHECK STATUS ERROR:", err.response?.data || err.message);
@@ -126,32 +172,64 @@ bot.start((ctx) => {
   );
 });
 
-bot.action("ORDER", (ctx) => {
-  ctx.reply(
-    "Pilih Produk:",
-    Markup.inlineKeyboard([
-      [Markup.button.callback("NETFLIX - Rp100", "NETFLIX")],
-      [Markup.button.callback("VIU - Rp200", "VIU")]
-    ])
-  );
+bot.action("ORDER", async (ctx) => {
+  const userId = ctx.from.id;
+
+  userOrders[userId] = {
+    qty: 1
+  };
+
+  await ctx.reply(orderText(userId), orderKeyboard());
 });
 
-bot.action("PRODUK_A", async (ctx) => {
+bot.action(["PLUS_1", "PLUS_5", "PLUS_ALL", "MIN_1", "MIN_5", "MIN_ALL"], async (ctx) => {
+  const userId = ctx.from.id;
+
+  if (!userOrders[userId]) {
+    userOrders[userId] = { qty: 1 };
+  }
+
+  let qty = userOrders[userId].qty;
+
+  if (ctx.match[0] === "PLUS_1") qty += 1;
+  if (ctx.match[0] === "PLUS_5") qty += 5;
+  if (ctx.match[0] === "PLUS_ALL") qty = product.stock;
+
+  if (ctx.match[0] === "MIN_1") qty -= 1;
+  if (ctx.match[0] === "MIN_5") qty -= 5;
+  if (ctx.match[0] === "MIN_ALL") qty = 1;
+
+  if (qty < 1) qty = 1;
+  if (qty > product.stock) qty = product.stock;
+
+  userOrders[userId].qty = qty;
+
+  await ctx.editMessageText(orderText(userId), orderKeyboard());
+});
+
+bot.action("PAY", async (ctx) => {
   try {
-    await createPayment(ctx, "NETFLIX", 100);
+    const userId = ctx.from.id;
+    const qty = userOrders[userId]?.qty || 1;
+
+    if (qty > product.stock) {
+      return ctx.reply("Stok tidak cukup.");
+    }
+
+    const total = product.price * qty;
+
+    await createPayment(ctx, total, qty);
   } catch (err) {
-    console.error("ERROR NETFLIX:", err.response?.data || err.message);
-    ctx.reply("Gagal membuat pembayaran. Cek API Ramashop atau Railway Logs.");
+    console.error("PAYMENT ERROR:", err.response?.data || err.message);
+    ctx.reply("Gagal membuat pembayaran. Cek Railway Logs.");
   }
 });
 
-bot.action("VIU", async (ctx) => {
-  try {
-    await createPayment(ctx, "VIU", 200);
-  } catch (err) {
-    console.error("ERROR VIU:", err.response?.data || err.message);
-    ctx.reply("Gagal membuat pembayaran. Cek API Ramashop atau Railway Logs.");
-  }
+bot.action("CANCEL", async (ctx) => {
+  const userId = ctx.from.id;
+  delete userOrders[userId];
+
+  await ctx.editMessageText("Pesanan dibatalkan.");
 });
 
 app.get("/", (req, res) => {
