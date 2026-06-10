@@ -250,6 +250,61 @@ bot.action("CANCEL", async (ctx) => {
   await ctx.editMessageText("Pesanan dibatalkan.");
 });
 
+bot.action("SNK", async (ctx) => {
+  await ctx.reply(SNK_TEXT);
+});
+
+bot.command("broadcast", async (ctx) => {
+  if (ctx.from.id !== ADMIN_ID) {
+    return ctx.reply("Anda bukan admin.");
+  }
+
+  const text = ctx.message.text.replace("/broadcast", "").trim();
+
+  if (!text) {
+    return ctx.reply("Format: /broadcast isi pesan");
+  }
+
+  let success = 0;
+
+  for (const userId of users) {
+    try {
+      await bot.telegram.sendMessage(userId, text);
+      success++;
+    } catch (err) {
+      console.log("Gagal kirim ke", userId);
+    }
+  }
+
+  ctx.reply(`Broadcast terkirim ke ${success} user.`);
+});
+
+bot.on("photo", async (ctx) => {
+  if (ctx.from.id !== ADMIN_ID) return;
+
+  const caption = ctx.message.caption || "";
+
+  if (!caption.startsWith("/broadcastfoto")) return;
+
+  const text = caption.replace("/broadcastfoto", "").trim();
+  const photo = ctx.message.photo[ctx.message.photo.length - 1].file_id;
+
+  let success = 0;
+
+  for (const userId of users) {
+    try {
+      await bot.telegram.sendPhoto(userId, photo, {
+        caption: text || undefined
+      });
+      success++;
+    } catch (err) {
+      console.log("Gagal kirim foto ke", userId);
+    }
+  }
+
+  ctx.reply(`Broadcast foto terkirim ke ${success} user.`);
+});
+
 app.get("/", (req, res) => {
   res.send("Bot berjalan dengan baik");
 });
