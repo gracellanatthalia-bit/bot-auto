@@ -282,9 +282,11 @@ function mainMenuKeyboard() {
 bot.start((ctx) => {
   addUser(ctx.from.id);
 
-  ctx.reply(
+ctx.reply(
     "Selamat datang di Bot Auto Order!",
-    mainMenuKeyboard()
+    Markup.inlineKeyboard([
+      [Markup.button.callback("📦 Order Produk", "ORDER")]
+    ])
   );
 });
 
@@ -325,14 +327,6 @@ bot.hears("How To Order ❓", async (ctx) => {
 3. Pilih metode Pembayaran
 4. Bayar
 5. Produk dikirim otomatis`);
-});
-
-  ctx.reply(
-    "Selamat datang di Bot Auto Order!",
-    Markup.inlineKeyboard([
-      [Markup.button.callback("📦 Order Produk", "ORDER")]
-    ])
-  );
 });
 
 bot.action("ORDER", async (ctx) => {
