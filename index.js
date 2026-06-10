@@ -151,18 +151,34 @@ ${data.qrImage}`
 
         product.stock -= qty;
 
-        await ctx.reply(
-          `✅ Pembayaran berhasil!
+await ctx.reply(`
+✅ PEMBAYARAN BERHASIL
 
-Produk: ${product.name}
-Jumlah: ${qty} pcs
+Produk: ${productName}
 
-Akun Premium:
-emailnetflix@gmail.com | password123
+Email: netflix@gmail.com
+Password: password123
 
-Terima kasih telah membeli.`
-        );
-      }
+━━━━━━━━━━━━━━
+
+📜 Syarat & Ketentuan
+
+• No refund
+• Garansi 1x24 jam
+• Login maksimal 1 device
+• Jangan mengganti email akun
+
+★ 𝐖𝐀𝐑𝐀𝐍𝐓𝐘 𝐓𝐎 𝐀𝐂𝐓𝐈𝐕𝐄 ★
+
+ㅤ— wajib send screenshot login max 1x24jam ke [ https://t.me/twestip/134 ]
+ㅤ— apabila ada problem dengan akun nya mohon untuk mengisi format garansi di @warantyj
+ㅤ— tidak ss login lebih dari 24jam dianggap tidak ada garansi
+ㅤㅤㅤㅤㅤㅤㅤㅤㅤ
+
+━━━━━━━━━━━━━━
+
+Terima kasih telah berbelanja 🙏
+`);
 
       if (status.data && status.data.status === "already") {
         clearInterval(interval);
