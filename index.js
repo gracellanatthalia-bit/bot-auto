@@ -314,10 +314,57 @@ bot.action("PAY_QRIS", async (ctx) => {
       return ctx.reply("Silakan pilih produk dulu.");
     }
 
+    const products = getProducts();
+    const product = products[order.productId];
+
+    const today = new Date().toLocaleDateString("id-ID");
+
+    await ctx.reply(
+      `💳 Silahkan Pilih Metode Pembayaran
+
+Informasi Tagihan
+— Total Dibayar: ${formatRupiah(product.price)}
+— Date Created: ${today}
+
+Informasi Kamu
+— Name: ${ctx.from.first_name || "Anonymous"}
+— Saldo Kamu: Rp 0
+— User ID: ${ctx.from.id}`,
+      Markup.inlineKeyboard([
+        [Markup.button.callback("QRIS", "CREATE_QRIS")],
+        [Markup.button.callback("Balance", "PAY_SALDO")],
+        [Markup.button.callback("Batalkan Pembelian", "CANCEL")]
+      ])
+    );
+  } catch (err) {
+    console.error("PAYMENT MENU ERROR:", err.response?.data || err.message);
+    ctx.reply("Gagal membuka metode pembayaran.");
+  }
+});
+
+    if (!order) {
+      return ctx.reply("Silakan pilih produk dulu.");
+    }
+
     await createPayment(ctx, order.productId);
   } catch (err) {
     console.error("PAYMENT ERROR:", err.response?.data || err.message);
     ctx.reply("Gagal membuat pembayaran. Cek Railway Logs.");
+  }
+});
+
+bot.action("CREATE_QRIS", async (ctx) => {
+  try {
+    const order = userOrders[ctx.from.id];
+
+    if (!order) {
+      return ctx.reply("Silakan pilih produk dulu.");
+    }
+
+    await createPayment(ctx, order.productId);
+  } catch (err) {
+    console.error("CREATE QRIS ERROR:", err.response?.data || err.message);
+    ctx.reply("Gagal membuat QRIS. Cek Railway Logs.");
   }
 });
 
