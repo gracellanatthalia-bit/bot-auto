@@ -87,9 +87,6 @@ ${data.qrImage}`
       if (status.data && status.data.status === "success") {
         clearInterval(interval);
 
-        await ctx.reply(
-          `✅ Pembayaran berhasil!
-
 await ctx.reply(
   `✅ Pembayaran berhasil!
 
