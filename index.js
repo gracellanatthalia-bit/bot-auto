@@ -282,11 +282,9 @@ function mainMenuKeyboard() {
 bot.start((ctx) => {
   addUser(ctx.from.id);
 
-ctx.reply(
+  ctx.reply(
     "Selamat datang di Bot Auto Order!",
-    Markup.inlineKeyboard([
-      [Markup.button.callback("📦 Order Produk", "ORDER")]
-    ])
+    mainMenuKeyboard()
   );
 });
 
@@ -648,7 +646,7 @@ bot.on("photo", async (ctx) => {
 bot.on("text", async (ctx) => {
   const state = adminState[ctx.from.id];
 
-  if (!state || !isAdmin(ctx)) return;
+  if (!state) return;
 
   const text = ctx.message.text;
 
