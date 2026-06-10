@@ -100,13 +100,6 @@ premium@gmail.com
 
 🔑 Password:
 masuk123
-
-
-★ 𝐖𝐀𝐑𝐀𝐍𝐓𝐘 𝐓𝐎 𝐀𝐂𝐓𝐈𝐕𝐄 ★
-
-ㅤ— wajib send screenshot login max 1x24jam ke [ https://t.me/twestip/134 ]
-ㅤ— apabila ada problem dengan akun nya mohon untuk mengisi format garansi di @warantyj
-ㅤ— tidak ss login lebih dari 24jam dianggap tidak ada garansi
 ㅤㅤㅤㅤㅤㅤㅤㅤㅤ
 
 Terima kasih telah membeli.`
