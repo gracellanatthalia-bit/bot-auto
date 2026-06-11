@@ -281,12 +281,31 @@ ${data.qrImage}`
 }
 
 function mainMenuKeyboard() {
-  return Markup.keyboard([
-    ["🛒 List Produk", "💰 Saldo: Rp 0"],
-    ["1", "2", "3", "4", "5", "6"],
-    ["🧾 Riwayat Transaksi"],
-    ["✨ Best Seller", "How To Order ❓"]
-  ]).resize();
+  const productCount = Object.keys(getProducts()).length;
+
+  const keyboard = [
+    ["🛒 List Produk", `💰 Saldo: ${formatRupiah(0)}`]
+  ];
+
+  let row = [];
+
+  for (let i = 1; i <= productCount; i++) {
+    row.push(String(i));
+
+    if (row.length === 6) {
+      keyboard.push(row);
+      row = [];
+    }
+  }
+
+  if (row.length > 0) {
+    keyboard.push(row);
+  }
+
+  keyboard.push(["🧾 Riwayat Transaksi"]);
+  keyboard.push(["✨ Best Seller", "How To Order ❓"]);
+
+  return Markup.keyboard(keyboard).resize();
 }
 
 bot.start((ctx) => {
@@ -316,7 +335,11 @@ bot.hears(/Saldo/i, async (ctx) => {
 
 bot.hears("🛒 List Produk", async (ctx) => {
   addUser(ctx.from.id);
-  await ctx.reply(stockText());
+
+  await ctx.reply(
+    stockText(),
+    mainMenuKeyboard()
+  );
 });
 
 bot.hears("🧾 Riwayat Transaksi", async (ctx) => {
