@@ -433,16 +433,19 @@ bot.action("CREATE_QRIS", async (ctx) => {
 
     await createPayment(ctx, order.productId);
   } catch (err) {
-  console.error("CREATE QRIS ERROR:", err.response?.data || err.message);
+    console.error("CREATE QRIS ERROR:", err.response?.data || err.message);
 
-  ctx.reply(
-    "Gagal membuat QRIS:\n" +
-    (err.response?.data?.message ||
-      err.response?.data?.error ||
-      JSON.stringify(err.response?.data) ||
-      err.message)
-  );
-}
+    ctx.reply(
+      "Gagal membuat QRIS:\n" +
+      (
+        err.response?.data?.message ||
+        err.response?.data?.error ||
+        JSON.stringify(err.response?.data) ||
+        err.message
+      )
+    );
+  }
+});
 
 bot.action("PAY_SALDO", async (ctx) => {
   await ctx.answerCbQuery();
