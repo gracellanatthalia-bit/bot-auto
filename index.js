@@ -232,8 +232,8 @@ async function createPayment(ctx, productId) {
   const data = response.data.data;
   const depositId = data.depositId;
 
-  await ctx.reply(
-    `✅ Invoice berhasil dibuat
+  const invoiceMsg = await ctx.reply(
+  `✅ Invoice berhasil dibuat
 
 Produk: ${product.name}
 Harga: ${formatRupiah(product.price)}
@@ -244,7 +244,7 @@ ${depositId}
 
 Silakan bayar QRIS:
 ${data.qrImage}`
-  );
+);
 
   let attempts = 0;
 
@@ -262,7 +262,7 @@ ${data.qrImage}`
         const account = latestStocks[productId].shift();
         writeJSON(STOCKS_FILE, latestStocks);
 
-        await ctx.reply("✅ Pembayaran berhasil! Produk dikirim otomatis:");
+        await ctx.reply("✅ Pembayaran berhasil! Produk akan dikirim:");
         await ctx.reply(deliveryText(product, account));
       }
 
