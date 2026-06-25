@@ -2,8 +2,8 @@ require("dotenv").config();
 
 const express = require("express");
 const axios = require("axios");
-const crypto = require("crypto");
 const fs = require("fs");
+const crypto = require("crypto");
 const { Telegraf, Markup } = require("telegraf");
 
 const app = express();
@@ -190,13 +190,138 @@ ${snk}`;
   return response.data;
 }
 
+  const crypto = require("crypto");
+
+function generateSignature(body, method = "POST") {
+  const timestamp = new Date()
+    .toISOString()
+    .replace(/[-:TZ.]/g, "")
+    .slice(0, 14);
+
+  const bodyHash = crypto
+    .createHash("sha256")
+    .update(body)
+    .digest("hex");
+
+  const stringToSign =
+    method +
+    ":" +
+    IPAYMU_VA +
+    ":" +
+    bodyHash +
+    ":" +
+    IPAYMU_API_KEY;
+
+  const signature = crypto
+    .createHmac("sha256", IPAYMU_API_KEY)
+    .update(stringToSign)
+    .digest("hex");
+
+  return {
+    timestamp,
+    signature
+  };
+}
+
+function generateSignature(bodyString, method = "POST") {
+  const timestamp = new Date()
+    .toISOString()
+    .replace(/[-:TZ.]/g, "")
+    .slice(0, 14);
+
+  const bodyHash = crypto
+    .createHash("sha256")
+    .update(bodyString)
+    .digest("hex");
+
+  const stringToSign = `${method}:${IPAYMU_VA}:${bodyHash}:${IPAYMU_API_KEY}`;
+
+  const signature = crypto
+    .createHmac("sha256", IPAYMU_API_KEY)
+    .update(stringToSign)
+    .digest("hex");
+
+  return {
+    signature,
+    timestamp
+  };
+}
+
+async function createPayment(ctx, productId) {
+  const products = getProducts();
+  const stocks = getStocks();
+
+  const product = products[productId];
+
   if (!product) {
     return ctx.reply("Produk tidak ditemukan.");
   }
 
-  if (!stocks[productId] || stocks[productId].length < 1) {
-    return ctx.reply("Stok produk habis.");
+  if (!stocks[productId] || stocks[productId].length === 0) {
+    return ctx.reply("Stok habis.");
   }
+
+  const body = new URLSearchParams();
+
+  body.append("name", ctx.from.first_name || "Buyer");
+  body.append("phone", "08123456789");
+  body.append("email", "buyer@mail.com");
+
+  body.append("amount", product.price);
+
+  body.append(
+    "notifyUrl",
+    process.env.BASE_URL + "/ipaymu-callback"
+  );
+
+  body.append("expired", "24");
+  body.append("expiredType", "hours");
+
+  body.append(
+    "referenceId",
+    Date.now().toString()
+  );
+
+  body.append("paymentMethod", "qris");
+body.append("paymentChannel", "mpm");
+
+  body.append("product[]", product.name);
+  body.append("qty[]", "1");
+  body.append("price[]", product.price);
+
+ 
+const { signature, timestamp } = generateSignature(body.toString());
+
+const response = await axios.post(
+  "https://sandbox.ipaymu.com/api/v2/payment/direct",
+  body.toString(),
+  {
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded",
+      "va": IPAYMU_VA,
+      "signature": signature,
+      "timestamp": timestamp
+    }
+  }
+);
+
+console.log("IPAYMU RESPONSE:", response.data);
+
+const data = response.data.Data;
+
+if (response.data.Status !== 200) {
+  throw new Error(response.data.Message || "Gagal membuat pembayaran iPaymu");
+}
+
+await ctx.reply(
+`✅ Invoice iPaymu berhasil dibuat
+
+Produk: ${product.name}
+Harga: ${formatRupiah(product.price)}
+
+Silakan bayar QRIS:
+${data.PaymentNo || data.PaymentName || JSON.stringify(data)}`
+);
 
   const response = await axios.post(
     "https://sandbox.ipaymu.com/api/v2/payment/direct",
