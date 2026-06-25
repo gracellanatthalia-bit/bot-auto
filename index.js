@@ -178,14 +178,6 @@ Password: ${password}
 
 ${snk}`;
 }
-    `https://ramashop.my.id/api/public/deposit/status/${depositId}`,
-    {
-      headers: {
-        "X-API-Key": ,
-        "Content-Type": "application/json"
-      }
-    }
-  );
 
   return response.data;
 }
@@ -330,12 +322,6 @@ ${data.PaymentNo || data.PaymentName || JSON.stringify(data)}`
       method: "qris"
     },
     {
-      headers: {
-        "X-API-Key": ,
-        "Content-Type": "application/json"
-      }
-    }
-  );
 
   console.log("RAMASHOP RESPONSE:", response.data);
 
@@ -911,12 +897,6 @@ if (state.step === "TOPUP_AMOUNT") {
       method: "qris"
     },
     {
-      headers: {
-        "X-API-Key": ,
-        "Content-Type": "application/json"
-      }
-    }
-  );
 
   const data = response.data.data;
   const depositId = data.depositId;
