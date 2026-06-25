@@ -237,7 +237,6 @@ function generateSignature(bodyString, method = "POST") {
 async function createPayment(ctx, productId) {
   const products = getProducts();
   const stocks = getStocks();
-
   const product = products[productId];
 
   if (!product) {
@@ -245,62 +244,63 @@ async function createPayment(ctx, productId) {
   }
 
   if (!stocks[productId] || stocks[productId].length === 0) {
-    return ctx.reply("Stok habis.");
+    return ctx.reply("Stok produk habis.");
   }
 
-  const body = new URLSearchParams();
+  const referenceId = `ORDER-${ctx.from.id}-${Date.now()}`;
 
+  const body = new URLSearchParams();
   body.append("name", ctx.from.first_name || "Buyer");
   body.append("phone", "08123456789");
   body.append("email", "buyer@mail.com");
-
-  body.append("amount", product.price);
-
-  body.append(
-    "notifyUrl",
-    process.env.BASE_URL + "/ipaymu-callback"
-  );
-
+  body.append("amount", String(product.price));
+  body.append("notifyUrl", process.env.BASE_URL + "/ipaymu-callback");
   body.append("expired", "24");
   body.append("expiredType", "hours");
-
-  body.append(
-    "referenceId",
-    Date.now().toString()
-  );
-
+  body.append("comments", "Order Telegram Bot");
+  body.append("referenceId", referenceId);
   body.append("paymentMethod", "qris");
-body.append("paymentChannel", "mpm");
-
+  body.append("paymentChannel", "mpm");
   body.append("product[]", product.name);
   body.append("qty[]", "1");
-  body.append("price[]", product.price);
+  body.append("price[]", String(product.price));
+  body.append("weight[]", "1");
+  body.append("width[]", "1");
+  body.append("height[]", "1");
+  body.append("length[]", "1");
+  body.append("deliveryArea", "76111");
+  body.append("deliveryAddress", "Denpasar");
 
- 
-const { signature, timestamp } = generateSignature(body.toString());
+  const { signature, timestamp } = generateSignature(body.toString());
 
-const response = await axios.post(
-  "https://sandbox.ipaymu.com/api/v2/payment/direct",
-  body.toString(),
-  {
-    headers: {
-      "Content-Type": "application/x-www-form-urlencoded",
-      "va": IPAYMU_VA,
-      "signature": signature,
-      "timestamp": timestamp
+  const response = await axios.post(
+    "https://sandbox.ipaymu.com/api/v2/payment/direct",
+    body.toString(),
+    {
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+        va: IPAYMU_VA,
+        signature,
+        timestamp
+      }
     }
+  );
+
+  console.log("IPAYMU RESPONSE:", response.data);
+
+  if (response.data.Status !== 200) {
+    throw new Error(response.data.Message || "Gagal membuat pembayaran iPaymu");
   }
-);
 
-console.log("IPAYMU RESPONSE:", response.data);
+  const data = response.data.Data;
 
-const data = response.data.Data;
+  userOrders[referenceId] = {
+    userId: ctx.from.id,
+    chatId: ctx.chat.id,
+    productId: productId
+  };
 
-if (response.data.Status !== 200) {
-  throw new Error(response.data.Message || "Gagal membuat pembayaran iPaymu");
-}
-
-await ctx.reply(
+  await ctx.reply(
 `✅ Invoice iPaymu berhasil dibuat
 
 Produk: ${product.name}
@@ -308,7 +308,7 @@ Harga: ${formatRupiah(product.price)}
 
 Silakan bayar QRIS:
 ${data.PaymentNo || data.PaymentName || JSON.stringify(data)}`
-);
+  );
 }
 
   const invoiceMsg = await ctx.reply(
