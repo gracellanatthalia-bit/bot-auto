@@ -179,11 +179,6 @@ Password: ${password}
 ${snk}`;
 }
 
-  return response.data;
-}
-
-  const crypto = require("crypto");
-
 function generateSignature(body, method = "POST") {
   const timestamp = new Date()
     .toISOString()
