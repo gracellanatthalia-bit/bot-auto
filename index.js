@@ -2,6 +2,7 @@ require("dotenv").config();
 
 const express = require("express");
 const axios = require("axios");
+const crypto = require("crypto");
 const fs = require("fs");
 const { Telegraf, Markup } = require("telegraf");
 
@@ -14,13 +15,8 @@ const IPAYMU_VA = process.env.IPAYMU_VA;
 const IPAYMU_API_KEY = process.env.IPAYMU_API_KEY;
 const ADMIN_ID = 5487015519;
 
-if (!BOT_TOKEN) {
-  console.error("BOT_TOKEN belum terbaca dari Railway Variables");
-  process.exit(1);
-}
-
-if (!RAMASHOP_API_KEY) {
-  console.error("RAMASHOP_API_KEY belum terbaca dari Railway Variables");
+if (!IPAYMU_VA || !IPAYMU_API_KEY) {
+  console.error("IPAYMU_VA / IPAYMU_API_KEY belum terbaca");
   process.exit(1);
 }
 
@@ -182,13 +178,10 @@ Password: ${password}
 
 ${snk}`;
 }
-
-async function checkDepositStatus(depositId) {
-  const response = await axios.get(
     `https://ramashop.my.id/api/public/deposit/status/${depositId}`,
     {
       headers: {
-        "X-API-Key": RAMASHOP_API_KEY,
+        "X-API-Key": ,
         "Content-Type": "application/json"
       }
     }
@@ -196,11 +189,6 @@ async function checkDepositStatus(depositId) {
 
   return response.data;
 }
-
-async function createPayment(ctx, productId) {
-  const products = getProducts();
-  const stocks = getStocks();
-  const product = products[productId];
 
   if (!product) {
     return ctx.reply("Produk tidak ditemukan.");
@@ -211,14 +199,14 @@ async function createPayment(ctx, productId) {
   }
 
   const response = await axios.post(
-    "https://ramashop.my.id/api/public/deposit/create",
+    "https://sandbox.ipaymu.com/api/v2/payment/direct",
     {
       amount: Number(product.price),
       method: "qris"
     },
     {
       headers: {
-        "X-API-Key": RAMASHOP_API_KEY,
+        "X-API-Key": ,
         "Content-Type": "application/json"
       }
     }
@@ -799,7 +787,7 @@ if (state.step === "TOPUP_AMOUNT") {
     },
     {
       headers: {
-        "X-API-Key": RAMASHOP_API_KEY,
+        "X-API-Key": ,
         "Content-Type": "application/json"
       }
     }
