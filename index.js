@@ -10,7 +10,8 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 const BOT_TOKEN = process.env.BOT_TOKEN;
-const RAMASHOP_API_KEY = process.env.RAMASHOP_API_KEY;
+const IPAYMU_VA = process.env.IPAYMU_VA;
+const IPAYMU_API_KEY = process.env.IPAYMU_API_KEY;
 const ADMIN_ID = 5487015519;
 
 if (!BOT_TOKEN) {
