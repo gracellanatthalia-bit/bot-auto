@@ -309,23 +309,7 @@ Harga: ${formatRupiah(product.price)}
 Silakan bayar QRIS:
 ${data.PaymentNo || data.PaymentName || JSON.stringify(data)}`
 );
-
-  const response = await axios.post(
-    "https://sandbox.ipaymu.com/api/v2/payment/direct",
-    {
-      amount: Number(product.price),
-      method: "qris"
-    },
-    {
-
-  console.log("RAMASHOP RESPONSE:", response.data);
-
-  if (!response.data.success) {
-    throw new Error(response.data.message || "Gagal membuat QRIS Ramashop");
-  }
-
-  const data = response.data.data;
-  const depositId = data.depositId;
+}
 
   const invoiceMsg = await ctx.reply(
   `✅ Invoice berhasil dibuat
